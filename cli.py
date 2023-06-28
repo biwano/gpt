@@ -27,5 +27,11 @@ def create(file):
     Transform().text2embedding(file)
 
 
+@embedding.command()
+@click.argument('file', type=click.File('rb'))
+def save(file):
+    Transform().embedding2pinecone(file)
+
+
 if __name__ == '__main__':
     cli()
