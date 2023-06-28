@@ -1,0 +1,5 @@
+pdftotext
+python-dotenv
+langchain
+openai
+tiktoken
