@@ -2,7 +2,6 @@ from pathlib import Path
 import os
 import json
 from functools import cached_property
-import pinecone
 
 
 def curdir():
@@ -10,8 +9,17 @@ def curdir():
 
 
 class Transform():
-    def __init__(self):
+
+    @cached_property
+    def openAI_embeddings(self):
+        from langchain.embeddings import OpenAIEmbeddings
+        return OpenAIEmbeddings()
+
+    @cached_property
+    def pinecone_index(self):
+        import pinecone
         pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment="us-west4-gcp-free")
+        return pinecone.Index("verra-index")
 
     def get_dest_filepath(self, file, folder, ext):
         filename = Path(file.name).name
@@ -41,22 +49,29 @@ class Transform():
 
     def text2embedding(self, file):
         dest_file, exists = self.get_dest_file(file, "embeddings", "emb")
-        if not exists or True:
-            from langchain.embeddings import OpenAIEmbeddings
-            print(file.name)
-            embeddings = OpenAIEmbeddings()
+        if not exists:
             text = file.read().decode("utf-8")
-            query_result = embeddings.embed_query(text)
+            query_result = self.openAI_embeddings.embed_query(text)
             dest_file.write(json.dumps({"values": query_result}))
 
     def embedding2pinecone(self, file):
-        index = pinecone.Index("verra")
         vector_name = os.path.basename(file.name)
+        print(vector_name)
         vector = json.loads(file.read())
         vector.update({
             "id": vector_name
         })
-        print(vector_name)
+        index = self.pinecone_index
         index.upsert(
             vectors=[vector]
             )
+
+    def query(self, text):
+        embedding = json.load(open("./a", "r"))
+        embedding = self.openAI_embeddings.embed_query(text)
+        index = self.pinecone_index
+        res = index.query(
+            top_k=7,
+            vector=embedding
+        )
+        print(res)
