@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import json
 from functools import cached_property
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
 def curdir():
@@ -38,20 +39,22 @@ class Transform():
         # Transform to text
         text = " ".join(pdftotext.PDF(file))
 
-        # Find paragraphs
-        text = text.split("\n\n")
-
-        # Remove very small paragraphs
-        text = [t for t in text if len(t.split("\n")) > 1]
-        for i, t in enumerate(text):
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1024,
+            chunk_overlap=128
+        )
+        docs = text_splitter.create_documents([text])
+#        print(docs)
+        for i, t in enumerate(docs):
             dest_file_i = open(f"{dest_file_path}.{i}", "w")
-            dest_file_i.write(t)
-
+            dest_file_i.write(t.page_content)
+            
     def text2embedding(self, file):
         dest_file, exists = self.get_dest_file(file, "embeddings", "emb")
-        if not exists:
+        if not exists or True:
             text = file.read().decode("utf-8")
             query_result = self.openAI_embeddings.embed_query(text)
+            print(query_result)
             dest_file.write(json.dumps({"values": query_result}))
 
     def embedding2pinecone(self, file):
@@ -66,8 +69,12 @@ class Transform():
             vectors=[vector]
             )
 
+    def embeddings_purge(self):
+        index = self.pinecone_index
+        index.delete(deleteAll=True)
+
     def query(self, text):
-        embedding = json.load(open("./a", "r"))
+        #embedding = json.load(open("./a", "r"))
         embedding = self.openAI_embeddings.embed_query(text)
         index = self.pinecone_index
         res = index.query(
