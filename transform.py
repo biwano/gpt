@@ -2,7 +2,6 @@ from pathlib import Path
 import os
 import json
 from functools import cached_property
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
 def curdir():
@@ -15,6 +14,23 @@ class Transform():
     def openAI_embeddings(self):
         from langchain.embeddings import OpenAIEmbeddings
         return OpenAIEmbeddings()
+
+    @cached_property
+    def openAI_llmchain(self):
+        from langchain.llms import OpenAI
+        from langchain import PromptTemplate, LLMChain
+        template = """
+        ### Context ### 
+        {context}
+        
+        Using the given context answer this quetion: {question}
+
+        """
+
+        prompt = PromptTemplate(template=template, input_variables=["context", "question"])
+        llm = OpenAI()
+        llm_chain = LLMChain(prompt=prompt, llm=llm)
+        return llm_chain
 
     @cached_property
     def pinecone_index(self):
@@ -35,6 +51,8 @@ class Transform():
 
     def pdf2text(self, file):
         import pdftotext
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+
         dest_file_path = self.get_dest_filepath(file, "texts", "txt")
         # Transform to text
         text = " ".join(pdftotext.PDF(file))
@@ -74,11 +92,24 @@ class Transform():
         index.delete(deleteAll=True)
 
     def query(self, text):
-        #embedding = json.load(open("./a", "r"))
         embedding = self.openAI_embeddings.embed_query(text)
         index = self.pinecone_index
         res = index.query(
             top_k=7,
             vector=embedding
         )
-        print(res)
+        return res
+
+    def chat(self, question):
+        embeddings = self.query(question)
+        context = ""
+        for embedding in embeddings["matches"]:
+            filename = embedding['id'][:-4]
+            filename = f"var/texts/{filename}"
+            more_context = open(filename, 'r').read()
+            context = f"{context}\n{more_context}"
+        res = self.openAI_llmchain.run({
+            "context": context,
+            "question": question
+        })
+        return res
