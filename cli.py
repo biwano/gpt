@@ -37,9 +37,8 @@ def create(files):
 @embeddings.command(help="Saves embeddings to pinecone")
 @click.argument('files', type=click.File('rb'), nargs=-1)
 def save(files):
-    t = Store()
     for file in files:
-        t.embedding2pinecone(file)
+        store.embedding2pinecone(file)
 
 
 # Delete all mbeddings
