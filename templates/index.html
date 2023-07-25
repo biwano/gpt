@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Carbon GPT</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <h6>Ask me something about carbon</h6>
+        <input type="text" id="query" name="query" autofocus/>
+        <a class="waves-effect waves-light btn" onclick="chat()">
+            Ask
+        </a>
+
+        <div id="response" class=""></div>
+    </div>
+</body>
+<script>
+    const response_elem = document.getElementById("response");
+    const query_elem = document.getElementById("query");
+    query.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            chat();
+        }
+    });
+    function chat() {
+        response_elem.innerHTML = "Please wait..."
+        var response = "";
+        var query = document.getElementById("query").value;
+        query = encodeURIComponent(query);
+        socket = new WebSocket(`ws://${window.location.host}/chat?query=${query}`);
+        socket.onmessage = (event) => {
+            console.log(event)
+            response = `${response}${event.data}`;
+            response_elem.innerHTML = response;
+        };
+    }
+</script>
+</html>

@@ -5,3 +5,5 @@ openai
 tiktoken
 click
 pinecone-client
+flask
+flask-sock
