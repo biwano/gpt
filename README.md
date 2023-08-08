@@ -34,7 +34,12 @@ Put some pdfs in `var/pdfs/pending`
 `./cli.sh pdf restore var/pdfs/processed/*`
 
 # Ask the bot a question
+
 `./cli.sh process-pdf process-pdf var/pdfs/pending/*`
+
+# Run the chat app
+
+`flask run --host 0.0.0.0`
 
 
 

@@ -4,18 +4,30 @@
     <meta charset="UTF-8">
     <title>Carbon GPT</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-
 </head>
 <body>
     <div class="container">
         <h6>Ask me something about carbon</h6>
         <input type="text" id="query" name="query" autofocus/>
         <a class="waves-effect waves-light btn" onclick="chat()">
-            Ask
+            <i class="material-icons left">question_answer</i>Ask
         </a>
 
         <div id="response" class=""></div>
+        <hr/>
+        <ul class="collapsible">
+            <li>
+                <div class="collapsible-header"><i class="material-icons">filter_drama</i>Knowledge base</div>
+                <div class="collapsible-body">
+                <a href="/static/pdf/1-Xinxiang_VCS Project Description.pdf" target="_blank">Xinxiang project</a><br/>
+                <a href="/static/pdf/5-1VCS_PD(No.191).pdf" target="_blank">Dayingjiang project</a><br/>
+                <a href="/static/pdf/PROJ_DESC_1529_10NOV2014.pdf" target="_blank">Mongolia Chao'er project</a><br/>
+                </div>
+            </li>
+        </ul>
     </div>
 </body>
 <script>
@@ -25,6 +37,9 @@
         if (event.key === "Enter") {
             chat();
         }
+    });
+    $(document).ready(function(){
+        $('.collapsible').collapsible();
     });
     function chat() {
         response_elem.innerHTML = "Please wait..."
@@ -38,5 +53,6 @@
             response_elem.innerHTML = response;
         };
     }
+
 </script>
 </html>

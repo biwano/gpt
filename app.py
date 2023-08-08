@@ -1,7 +1,11 @@
 from flask import Flask, render_template, request
 from flask_sock import Sock
 from framework import store
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_url_path='/static',
+    static_folder='static'
+)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 sock = Sock(app)
@@ -21,3 +25,4 @@ def echo(ws):
     query = request.args.get("query")
     handler = FlaskCallbackHandler(ws)
     store.chat(query, [handler])
+
