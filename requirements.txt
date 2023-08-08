@@ -7,3 +7,4 @@ click
 pinecone-client
 flask
 flask-sock
+flake8

@@ -12,33 +12,10 @@ def cli():
     pass
 
 
-# PDF to Text
-@cli.command(help="Creates text chunks from a pdf file")
-@click.argument('file', type=click.File('rb'))
-def pdf2text(file):
-    store.pdf2text(file)
-
-
-# Embeddings Group
+# EMBEDDINGS ###############################
 @cli.group(help="Manage embeddings")
 def embeddings():
     pass
-
-
-# Create embeddings
-@embeddings.command(help="Creates embeddings from text files")
-@click.argument('files', type=click.File('rb'), nargs=-1)
-def create(files):
-    for file in files:
-        store.text2embedding(file)
-
-
-# Upload mbeddings
-@embeddings.command(help="Saves embeddings to pinecone")
-@click.argument('files', type=click.File('rb'), nargs=-1)
-def save(files):
-    for file in files:
-        store.embedding2pinecone(file)
 
 
 # Delete all mbeddings
@@ -47,11 +24,33 @@ def purge():
     store.embeddings_purge()
 
 
-# Query mbeddings
+# Query embeddings
 @embeddings.command(help="query pinecone encodings")
 @click.argument('query')
 def query(query):
-    store.query(query)
+    print(store.query(query))
+
+
+# PDFS ###############################
+@cli.group(help="Manage pdfs")
+def pdf():
+    pass
+
+
+@pdf.command(help="Transform PDF files into embeddings stored in pinecone")
+@click.argument('files', type=click.File('rb'), nargs=-1)
+def process(files):
+    for file in files:
+        print(f"Processing {file.name}")
+        store.process_pdf(file)
+
+
+@pdf.command(help="Returns a PDF into the pending state")
+@click.argument('files', type=click.File('rb'), nargs=-1)
+def restore(files):
+    for file in files:
+        print(f"Processing {file.name}")
+        store.restore_pdf(file)
 
 
 # PDF to Text

@@ -1,8 +1,6 @@
 from pathlib import Path
 import os
-import json
 from functools import cached_property
-import re
 
 
 def curdir():
@@ -39,22 +37,10 @@ class Store():
         pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment="us-west4-gcp-free")
         return pinecone.Index("verra-index")
 
-    def get_dest_filepath(self, file, folder, ext):
-        filename = Path(file.name).name
-        return f"{curdir()}/../var/{folder}/{filename}.{ext}"
-
-    def get_dest_file(self, file, folder, ext):
-        dest_filepath = self.get_dest_filepath(file, folder, ext)
-        dest_file = open(dest_filepath, "w")
-        exists = os.path.isfile(dest_filepath)
-
-        return dest_file, exists
-
     def pdf2text(self, file):
         import pdftotext
         from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-        dest_file_path = self.get_dest_filepath(file, "texts", "txt")
         # Transform to text
         text = " ".join(pdftotext.PDF(file))
 
@@ -63,38 +49,37 @@ class Store():
             chunk_overlap=128
         )
         docs = text_splitter.create_documents([text])
-#        print(docs)
-        for i, t in enumerate(docs):
-            dest_file_i = open(f"{dest_file_path}.{i}", "w")
-            dest_file_i.write(t.page_content)
-            
-    def text2embedding(self, file):
-        filename = Path(file.name).name
-        sp = filename.split(".")
-        orig_filename = ".".join(sp[0:-3])
-        chunk = sp[-1]
-        dest_file, exists = self.get_dest_file(file, "embeddings", "emb")
-        content = file.read().decode("utf-8")
-        query_result = self.openAI_embeddings.embed_query(content)
-        dest_file.write(json.dumps({
-            "values": query_result,
-            "metadata": {
-                "content": content,
-                "filename": orig_filename,
-                "chunk": chunk
-            }
-        }))
+        return list(map(lambda doc: doc.page_content, docs))
 
-    def embedding2pinecone(self, file):
-        vector_name = os.path.basename(file.name)
-        vector = json.loads(file.read())
-        vector.update({
-            "id": vector_name
-        })
-        index = self.pinecone_index
-        index.upsert(
-            vectors=[vector]
-            )
+    def process_pdf(self, file):
+        # Transform pdf to chunks
+        docs = self.pdf2text(file)
+        # Create embeddings
+        embeddings = self.openAI_embeddings.embed_documents(docs)
+        # Create vectors
+        filepath = Path(file.name)
+        filename = filepath.name
+        vectors = []
+        for i in range(len(docs)):
+            vectors.append({
+                "id": f"{filename}_{i}",
+                "values": embeddings[i],
+                "metadata": {
+                    "content": docs[i],
+                    "filename": filename,
+                    "chunk": i
+                }
+            })
+        # Save vectors to pinecone
+        self.pinecone_index.upsert(
+            vectors=vectors
+        )
+        # Mark the file as processed by moving it
+        os.rename(filepath, filepath.parent.joinpath("..").joinpath("processed").joinpath(filepath.name))
+
+    def restore_pdf(self, file):
+        filepath = Path(file.name)
+        os.rename(filepath, filepath.parent.joinpath("..").joinpath("pending").joinpath(filepath.name))
 
     def embeddings_purge(self):
         index = self.pinecone_index
